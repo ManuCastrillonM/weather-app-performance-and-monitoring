@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Build, Test, and Deploy
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build-test-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -23,7 +23,17 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Start static server
+        run: npx serve -s build -l 5000 &
+
+      - name: Wait for local server
+        run: npx wait-on http://localhost:5000
+
+      - name: Run Lighthouse CI
+        run: npx lhci autorun --config=./lighthouserc.json
+
       - name: Deploy to GitHub Pages
+        if: ${{ success() }}
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
